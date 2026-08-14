@@ -1,0 +1,19 @@
+{
+  "name": "sigou-gestao-ocorrencias",
+  "version": "1.0.0",
+  "description": "Gestão de ocorrências urbanas com priorização geográfica",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.0.2"
+  }
+}
