@@ -17,6 +17,10 @@ function getDatabase() {
   const columns = new Set(database.prepare('PRAGMA table_info(denuncias)').all().map((column) => column.name));
   const migrations = [
     ['contato', 'ALTER TABLE denuncias ADD COLUMN contato TEXT'],
+    ['telefone', 'ALTER TABLE denuncias ADD COLUMN telefone TEXT'],
+    ['email', 'ALTER TABLE denuncias ADD COLUMN email TEXT'],
+    ['consentimento_contato', 'ALTER TABLE denuncias ADD COLUMN consentimento_contato INTEGER NOT NULL DEFAULT 0'],
+    ['contato_status', "ALTER TABLE denuncias ADD COLUMN contato_status TEXT NOT NULL DEFAULT 'NAO_CONTATADO'"],
     ['evidencia_url', 'ALTER TABLE denuncias ADD COLUMN evidencia_url TEXT'],
     ['verificacao_status', "ALTER TABLE denuncias ADD COLUMN verificacao_status TEXT NOT NULL DEFAULT 'AGUARDANDO_VALIDACAO'"],
     ['confianca', 'ALTER TABLE denuncias ADD COLUMN confianca INTEGER NOT NULL DEFAULT 20'],

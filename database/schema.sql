@@ -6,6 +6,11 @@ CREATE TABLE IF NOT EXISTS denuncias (
   latitude REAL NOT NULL CHECK (latitude BETWEEN -90 AND 90),
   longitude REAL NOT NULL CHECK (longitude BETWEEN -180 AND 180),
   contato TEXT,
+  telefone TEXT,
+  email TEXT,
+  consentimento_contato INTEGER NOT NULL DEFAULT 0,
+  contato_status TEXT NOT NULL DEFAULT 'NAO_CONTATADO'
+    CHECK (contato_status IN ('NAO_CONTATADO', 'CONTATADO', 'SEM_RESPOSTA')),
   evidencia_url TEXT,
   verificacao_status TEXT NOT NULL DEFAULT 'AGUARDANDO_VALIDACAO'
     CHECK (verificacao_status IN ('AGUARDANDO_VALIDACAO', 'VALIDADA', 'REJEITADA')),
@@ -25,6 +30,14 @@ CREATE TABLE IF NOT EXISTS verificacao_auditoria (
   denuncia_id INTEGER NOT NULL REFERENCES denuncias(id),
   acao TEXT NOT NULL CHECK (acao IN ('VALIDADA', 'REJEITADA')),
   justificativa TEXT,
+  criado_em TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE TABLE IF NOT EXISTS contato_auditoria (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  denuncia_id INTEGER NOT NULL REFERENCES denuncias(id),
+  usuario_id INTEGER REFERENCES usuarios(id),
+  status TEXT NOT NULL CHECK (status IN ('NAO_CONTATADO', 'CONTATADO', 'SEM_RESPOSTA')),
   criado_em TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 

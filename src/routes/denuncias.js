@@ -21,8 +21,8 @@ const upload = multer({
   }
 });
 
-function calculateInitialConfidence({ descricao, contato, evidencia_url }) {
-  return Math.min(100, 20 + (descricao.trim().length >= 40 ? 10 : 0) + (contato ? 15 : 0) + (evidencia_url ? 30 : 0));
+function calculateInitialConfidence({ descricao, telefone, email, evidencia_url }) {
+  return Math.min(100, 20 + (descricao.trim().length >= 40 ? 10 : 0) + (telefone || email ? 15 : 0) + (evidencia_url ? 30 : 0));
 }
 
 function validImageSignature(file) {
@@ -44,6 +44,9 @@ router.post('/', upload.single('foto'), (req, res) => {
   const latitude = Number(req.body.latitude);
   const longitude = Number(req.body.longitude);
   const contato = req.body.contato;
+  const telefone = typeof req.body.telefone === 'string' ? req.body.telefone.trim() : '';
+  const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const consentimento_contato = req.body.consentimento_contato === 'true' || req.body.consentimento_contato === true;
   const errors = [];
   if (typeof titulo !== 'string' || titulo.trim().length < 3 || titulo.trim().length > 120) errors.push('Título deve ter entre 3 e 120 caracteres.');
   if (typeof descricao !== 'string' || descricao.trim().length < 3 || descricao.trim().length > 1000) errors.push('Descrição deve ter entre 3 e 1000 caracteres.');
@@ -55,6 +58,9 @@ router.post('/', upload.single('foto'), (req, res) => {
     errors.push('A localização deve estar no estado de São Paulo ou no norte do Paraná.');
   }
   if (contato != null && (typeof contato !== 'string' || contato.trim().length > 100)) errors.push('Contato inválido.');
+  if (telefone && !/^\+?[\d\s().-]{10,20}$/.test(telefone)) errors.push('Telefone inválido.');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('E-mail inválido.');
+  if ((telefone || email) && !consentimento_contato) errors.push('Autorize o contato para informar telefone ou e-mail.');
   if (req.file && !['image/jpeg', 'image/png', 'image/webp'].includes(req.file.mimetype)) errors.push('A foto deve ser JPG, PNG ou WebP.');
   if (!validImageSignature(req.file)) errors.push('O conteúdo do arquivo não corresponde a uma imagem válida.');
   if (errors.length) return res.status(400).json({ erro: 'Dados inválidos.', detalhes: errors });
@@ -68,7 +74,7 @@ router.post('/', upload.single('foto'), (req, res) => {
     fs.writeFileSync(path.join(uploadDirectory, filename), req.file.buffer);
     evidencia_url = `/uploads/${filename}`;
   }
-  const data = { titulo, descricao, grau_urgencia, latitude, longitude, contato: contato?.trim(), evidencia_url };
+  const data = { titulo, descricao, grau_urgencia, latitude, longitude, contato: contato?.trim(), telefone, email, consentimento_contato, evidencia_url };
   return res.status(201).json(repository.create({ ...data, confianca: calculateInitialConfidence(data) }));
 });
 
@@ -90,10 +96,14 @@ router.post('/proxima', (req, res) => {
 
   const eligible = repository.findPending().filter((report) => isInsideServiceArea(report.latitude, report.longitude));
   const classificacao = prioritizeReports(eligible, { latitude, longitude });
+  const awaiting = repository.findAwaitingValidation().filter((report) => isInsideServiceArea(report.latitude, report.longitude));
+  const classificacaoTriagem = prioritizeReports(awaiting, { latitude, longitude });
   return res.json({
     recomendada: classificacao[0] || null,
+    triagem_recomendada: classificacaoTriagem[0] || null,
     total_pendentes: classificacao.length,
-    classificacao
+    classificacao,
+    classificacao_triagem: classificacaoTriagem
   });
 });
 
@@ -120,6 +130,16 @@ router.patch('/:id/verificacao', (req, res) => {
   if (!VALID_VERIFICATION_STATUSES.includes(verificacaoStatus)) return res.status(400).json({ erro: 'Verificação deve ser VALIDADA ou REJEITADA.' });
   if (verificacaoStatus === 'REJEITADA' && justificativa.length < 5) return res.status(400).json({ erro: 'Informe uma justificativa para rejeitar.' });
   const updated = repository.updateVerification(id, verificacaoStatus, justificativa);
+  return updated ? res.json(updated) : res.status(404).json({ erro: 'Denúncia não encontrada.' });
+});
+
+router.patch('/:id/contato-status', (req, res) => {
+  const id = Number(req.params.id);
+  const status = typeof req.body.status === 'string' ? req.body.status.toUpperCase() : '';
+  const validStatuses = ['NAO_CONTATADO', 'CONTATADO', 'SEM_RESPOSTA'];
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: 'ID inválido.' });
+  if (!validStatuses.includes(status)) return res.status(400).json({ erro: 'Status de contato inválido.' });
+  const updated = repository.updateContactStatus(id, status, req.user.id);
   return updated ? res.json(updated) : res.status(404).json({ erro: 'Denúncia não encontrada.' });
 });
 
