@@ -3,10 +3,11 @@ const { getDatabase } = require('../db');
 function create(data) {
   const db = getDatabase();
   const result = db.prepare(`
-    INSERT INTO denuncias (titulo, descricao, grau_urgencia, latitude, longitude, contato, evidencia_url, confianca)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO denuncias (titulo, descricao, grau_urgencia, latitude, longitude, contato, telefone, email, consentimento_contato, evidencia_url, confianca)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(data.titulo.trim(), data.descricao.trim(), data.grau_urgencia, data.latitude, data.longitude,
-    data.contato || null, data.evidencia_url || null, data.confianca);
+    data.contato || null, data.telefone || null, data.email || null, data.consentimento_contato ? 1 : 0,
+    data.evidencia_url || null, data.confianca);
   return findById(Number(result.lastInsertRowid));
 }
 
@@ -31,6 +32,14 @@ function findPending() {
   `).all();
 }
 
+function findAwaitingValidation() {
+  return getDatabase().prepare(`
+    SELECT * FROM denuncias
+    WHERE status = 'PENDENTE' AND verificacao_status = 'AGUARDANDO_VALIDACAO'
+    ORDER BY criado_em ASC
+  `).all();
+}
+
 function updateVerification(id, verificationStatus, reason) {
   const db = getDatabase();
   db.exec('BEGIN IMMEDIATE');
@@ -50,6 +59,17 @@ function updateVerification(id, verificationStatus, reason) {
   }
 }
 
+function updateContactStatus(id, status, userId) {
+  const db = getDatabase();
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const result = db.prepare(`UPDATE denuncias SET contato_status = ?, atualizado_em = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`).run(status, id);
+    if (result.changes) db.prepare('INSERT INTO contato_auditoria (denuncia_id, usuario_id, status) VALUES (?, ?, ?)').run(id, userId, status);
+    db.exec('COMMIT');
+    return result.changes ? findById(id) : undefined;
+  } catch (error) { db.exec('ROLLBACK'); throw error; }
+}
+
 function updateStatus(id, status) {
   const result = getDatabase().prepare(`
     UPDATE denuncias
@@ -59,4 +79,4 @@ function updateStatus(id, status) {
   return result.changes ? findById(id) : undefined;
 }
 
-module.exports = { create, findById, findActive, findPending, updateStatus, updateVerification };
+module.exports = { create, findById, findActive, findPending, findAwaitingValidation, updateStatus, updateVerification, updateContactStatus };
