@@ -96,7 +96,7 @@ Em risco imediato à vida, ligue diretamente para `190`, `192` ou `193`.
 
 ## Dados e cópia de segurança
 
-As denúncias ficam em `data\sigou.db` e as fotos em `data\uploads`.
+No modo simples (SQLite), as denúncias ficam em `data\sigou.db`. No modo MySQL, ficam no banco `sigou` administrado pelo phpMyAdmin. As fotos continuam em `data\uploads`.
 
 Para fazer backup:
 
@@ -147,4 +147,18 @@ npm start
 npm test
 ```
 
-Usa Express, SQLite nativo do Node.js, Leaflet e OpenStreetMap. Antes de uso público real, configure HTTPS, credenciais próprias, política de privacidade, backups e proteção adequada dos dados pessoais.
+Usa Express, MySQL/MariaDB ou SQLite, Leaflet e OpenStreetMap.
+
+### Usar MySQL pelo phpMyAdmin
+
+1. No phpMyAdmin, clique em **Novo**, informe `sigou` e crie o banco com agrupamento `utf8mb4_unicode_ci`.
+2. Copie `.env.example` e renomeie a cópia para `.env`.
+3. Abra `.env` no Bloco de Notas e preencha `DB_USER` e `DB_PASSWORD` com o login do MySQL.
+4. Confirme que `DB_CLIENT=mysql` e `DB_NAME=sigou`.
+5. Execute `npm install` e depois `npm start`.
+
+Na primeira inicialização, o servidor executa `database/schema.mysql.sql`, cria as tabelas e cria o usuário inicial definido por `CENTRAL_USER` e `CENTRAL_PASSWORD`. O arquivo `.env` é ignorado pelo Git para não publicar senhas.
+
+Para voltar ao banco local sem phpMyAdmin, use `DB_CLIENT=sqlite` no `.env`.
+
+Antes de uso público real, configure HTTPS, credenciais próprias, política de privacidade, backups e proteção adequada dos dados pessoais.

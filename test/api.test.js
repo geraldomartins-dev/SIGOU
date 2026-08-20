@@ -5,6 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'sigou-test-'));
+process.env.DB_CLIENT = 'sqlite';
 process.env.DB_PATH = path.join(tempDirectory, 'test.db');
 
 const { createApp } = require('../src/app');
@@ -44,7 +45,7 @@ test('fluxo REST completo: criar, listar, priorizar e concluir', async (context)
 
   context.after(async () => {
     await new Promise((resolve) => server.close(resolve));
-    closeDatabase();
+    await closeDatabase();
     fs.rmSync(tempDirectory, { recursive: true, force: true });
   });
 

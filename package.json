@@ -1,6 +1,6 @@
 {
   "name": "sigou-gestao-ocorrencias",
-  "version": "1.0.0",
+  "version": "0.9.0-beta.1",
   "description": "Gestão de ocorrências urbanas com priorização geográfica",
   "main": "src/server.js",
   "type": "commonjs",
@@ -13,7 +13,9 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "express": "^5.1.0",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "mysql2": "^3.23.3"
   }
 }
