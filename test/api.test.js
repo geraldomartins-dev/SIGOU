@@ -7,6 +7,8 @@ const path = require('node:path');
 const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'sigou-test-'));
 process.env.DB_CLIENT = 'sqlite';
 process.env.DB_PATH = path.join(tempDirectory, 'test.db');
+process.env.CENTRAL_USER = 'operador';
+process.env.CENTRAL_PASSWORD = 'sigou123';
 
 const { createApp } = require('../src/app');
 const { closeDatabase } = require('../src/db');
