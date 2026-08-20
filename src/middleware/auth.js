@@ -5,8 +5,8 @@ function readBearer(req) {
   return header.startsWith('Bearer ') ? header.slice(7) : '';
 }
 
-function requireAuth(req, res, next) {
-  const user = findSession(readBearer(req));
+async function requireAuth(req, res, next) {
+  const user = await findSession(readBearer(req));
   if (!user) return res.status(401).json({ erro: 'Acesso restrito à Central de Atendimento.' });
   req.user = user;
   return next();

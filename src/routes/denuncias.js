@@ -7,7 +7,7 @@ const repository = require('../repositories/denunciaRepository');
 const { prioritizeReports } = require('../services/priorityService');
 const { isInsideServiceArea } = require('../utils/serviceArea');
 const { requireAuth } = require('../middleware/auth');
-const { DB_PATH } = require('../config');
+const { DATA_DIR } = require('../config');
 
 const router = express.Router();
 const VALID_STATUSES = ['PENDENTE', 'EM_ATENDIMENTO', 'CONCLUIDA'];
@@ -37,7 +37,7 @@ function validCoordinate(value, min, max) {
   return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
 }
 
-router.post('/', upload.single('foto'), (req, res) => {
+router.post('/', upload.single('foto'), async (req, res) => {
   const titulo = req.body.titulo;
   const descricao = req.body.descricao;
   const grau_urgencia = Number(req.body.grau_urgencia);
@@ -68,24 +68,24 @@ router.post('/', upload.single('foto'), (req, res) => {
   let evidencia_url;
   if (req.file) {
     const extension = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[req.file.mimetype];
-    const uploadDirectory = path.join(path.dirname(DB_PATH), 'uploads');
+    const uploadDirectory = path.join(DATA_DIR, 'uploads');
     fs.mkdirSync(uploadDirectory, { recursive: true });
     const filename = `${randomUUID()}${extension}`;
     fs.writeFileSync(path.join(uploadDirectory, filename), req.file.buffer);
     evidencia_url = `/uploads/${filename}`;
   }
   const data = { titulo, descricao, grau_urgencia, latitude, longitude, contato: contato?.trim(), telefone, email, consentimento_contato, evidencia_url };
-  return res.status(201).json(repository.create({ ...data, confianca: calculateInitialConfidence(data) }));
+  return res.status(201).json(await repository.create({ ...data, confianca: calculateInitialConfidence(data) }));
 });
 
 // Todo o restante é exclusivo de operadores autenticados.
 router.use(requireAuth);
 
-router.get('/', (req, res) => {
-  res.json(repository.findActive().filter((report) => isInsideServiceArea(report.latitude, report.longitude)));
+router.get('/', async (req, res) => {
+  res.json((await repository.findActive()).filter((report) => isInsideServiceArea(Number(report.latitude), Number(report.longitude))));
 });
 
-router.post('/proxima', (req, res) => {
+router.post('/proxima', async (req, res) => {
   const { latitude, longitude } = req.body;
   if (!validCoordinate(latitude, -90, 90) || !validCoordinate(longitude, -180, 180)) {
     return res.status(400).json({ erro: 'Latitude ou longitude do atendente inválida.' });
@@ -94,9 +94,9 @@ router.post('/proxima', (req, res) => {
     return res.status(400).json({ erro: 'A equipe deve estar no estado de São Paulo ou no norte do Paraná.' });
   }
 
-  const eligible = repository.findPending().filter((report) => isInsideServiceArea(report.latitude, report.longitude));
+  const eligible = (await repository.findPending()).filter((report) => isInsideServiceArea(Number(report.latitude), Number(report.longitude)));
   const classificacao = prioritizeReports(eligible, { latitude, longitude });
-  const awaiting = repository.findAwaitingValidation().filter((report) => isInsideServiceArea(report.latitude, report.longitude));
+  const awaiting = (await repository.findAwaitingValidation()).filter((report) => isInsideServiceArea(Number(report.latitude), Number(report.longitude)));
   const classificacaoTriagem = prioritizeReports(awaiting, { latitude, longitude });
   return res.json({
     recomendada: classificacao[0] || null,
@@ -107,39 +107,39 @@ router.post('/proxima', (req, res) => {
   });
 });
 
-router.patch('/:id/status', (req, res) => {
+router.patch('/:id/status', async (req, res) => {
   const id = Number(req.params.id);
   const status = typeof req.body.status === 'string' ? req.body.status.toUpperCase() : '';
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: 'ID inválido.' });
   if (!VALID_STATUSES.includes(status)) return res.status(400).json({ erro: `Status deve ser: ${VALID_STATUSES.join(', ')}.` });
-  const current = repository.findById(id);
+  const current = await repository.findById(id);
   if (!current) return res.status(404).json({ erro: 'Denúncia não encontrada.' });
   if (status === 'EM_ATENDIMENTO' && current.verificacao_status !== 'VALIDADA' && current.grau_urgencia !== 4) {
     return res.status(409).json({ erro: 'Valide a denúncia antes de iniciar o atendimento.' });
   }
 
-  const updated = repository.updateStatus(id, status);
+  const updated = await repository.updateStatus(id, status);
   return updated ? res.json(updated) : res.status(404).json({ erro: 'Denúncia não encontrada.' });
 });
 
-router.patch('/:id/verificacao', (req, res) => {
+router.patch('/:id/verificacao', async (req, res) => {
   const id = Number(req.params.id);
   const verificacaoStatus = typeof req.body.status === 'string' ? req.body.status.toUpperCase() : '';
   const justificativa = typeof req.body.justificativa === 'string' ? req.body.justificativa.trim() : '';
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: 'ID inválido.' });
   if (!VALID_VERIFICATION_STATUSES.includes(verificacaoStatus)) return res.status(400).json({ erro: 'Verificação deve ser VALIDADA ou REJEITADA.' });
   if (verificacaoStatus === 'REJEITADA' && justificativa.length < 5) return res.status(400).json({ erro: 'Informe uma justificativa para rejeitar.' });
-  const updated = repository.updateVerification(id, verificacaoStatus, justificativa);
+  const updated = await repository.updateVerification(id, verificacaoStatus, justificativa);
   return updated ? res.json(updated) : res.status(404).json({ erro: 'Denúncia não encontrada.' });
 });
 
-router.patch('/:id/contato-status', (req, res) => {
+router.patch('/:id/contato-status', async (req, res) => {
   const id = Number(req.params.id);
   const status = typeof req.body.status === 'string' ? req.body.status.toUpperCase() : '';
   const validStatuses = ['NAO_CONTATADO', 'CONTATADO', 'SEM_RESPOSTA'];
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: 'ID inválido.' });
   if (!validStatuses.includes(status)) return res.status(400).json({ erro: 'Status de contato inválido.' });
-  const updated = repository.updateContactStatus(id, status, req.user.id);
+  const updated = await repository.updateContactStatus(id, status, req.user.id);
   return updated ? res.json(updated) : res.status(404).json({ erro: 'Denúncia não encontrada.' });
 });
 

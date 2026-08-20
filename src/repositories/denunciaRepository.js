@@ -1,82 +1,76 @@
 const { getDatabase } = require('../db');
 
-function create(data) {
-  const db = getDatabase();
-  const result = db.prepare(`
+async function create(data) {
+  const db = await getDatabase();
+  const result = await db.run(`
     INSERT INTO denuncias (titulo, descricao, grau_urgencia, latitude, longitude, contato, telefone, email, consentimento_contato, evidencia_url, confianca)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(data.titulo.trim(), data.descricao.trim(), data.grau_urgencia, data.latitude, data.longitude,
+  `, [data.titulo.trim(), data.descricao.trim(), data.grau_urgencia, data.latitude, data.longitude,
     data.contato || null, data.telefone || null, data.email || null, data.consentimento_contato ? 1 : 0,
-    data.evidencia_url || null, data.confianca);
-  return findById(Number(result.lastInsertRowid));
+    data.evidencia_url || null, data.confianca]);
+  return findById(Number(result.insertId));
 }
 
-function findById(id) {
-  return getDatabase().prepare('SELECT * FROM denuncias WHERE id = ?').get(id);
+async function findById(id) {
+  return (await getDatabase()).get('SELECT * FROM denuncias WHERE id = ?', [id]);
 }
 
-function findActive() {
-  return getDatabase().prepare(`
+async function findActive() {
+  return (await getDatabase()).all(`
     SELECT * FROM denuncias
     WHERE status IN ('PENDENTE', 'EM_ATENDIMENTO') AND verificacao_status != 'REJEITADA'
     ORDER BY criado_em DESC
-  `).all();
+  `);
 }
 
-function findPending() {
-  return getDatabase().prepare(`
+async function findPending() {
+  return (await getDatabase()).all(`
     SELECT * FROM denuncias
     WHERE status = 'PENDENTE'
       AND (verificacao_status = 'VALIDADA' OR (grau_urgencia = 4 AND verificacao_status = 'AGUARDANDO_VALIDACAO'))
     ORDER BY criado_em ASC
-  `).all();
+  `);
 }
 
-function findAwaitingValidation() {
-  return getDatabase().prepare(`
+async function findAwaitingValidation() {
+  return (await getDatabase()).all(`
     SELECT * FROM denuncias
     WHERE status = 'PENDENTE' AND verificacao_status = 'AGUARDANDO_VALIDACAO'
     ORDER BY criado_em ASC
-  `).all();
+  `);
 }
 
-function updateVerification(id, verificationStatus, reason) {
-  const db = getDatabase();
-  db.exec('BEGIN IMMEDIATE');
-  try {
-    const result = db.prepare(`
+async function updateVerification(id, verificationStatus, reason) {
+  const db = await getDatabase();
+  const changed = await db.transaction(async (tx) => {
+    const result = await tx.run(`
       UPDATE denuncias SET verificacao_status = ?, motivo_rejeicao = ?,
-        confianca = CASE WHEN ? = 'VALIDADA' THEN MAX(confianca, 80) ELSE confianca END,
-        verificado_em = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
-        atualizado_em = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?
-    `).run(verificationStatus, reason || null, verificationStatus, id);
-    if (result.changes) db.prepare('INSERT INTO verificacao_auditoria (denuncia_id, acao, justificativa) VALUES (?, ?, ?)').run(id, verificationStatus, reason || null);
-    db.exec('COMMIT');
-    return result.changes ? findById(id) : undefined;
-  } catch (error) {
-    db.exec('ROLLBACK');
-    throw error;
-  }
+        confianca = CASE WHEN ? = 'VALIDADA' AND confianca < 80 THEN 80 ELSE confianca END,
+        verificado_em = CURRENT_TIMESTAMP, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?
+    `, [verificationStatus, reason || null, verificationStatus, id]);
+    if (result.affectedRows) await tx.run('INSERT INTO verificacao_auditoria (denuncia_id, acao, justificativa) VALUES (?, ?, ?)', [id, verificationStatus, reason || null]);
+    return result.affectedRows;
+  });
+  return changed ? findById(id) : undefined;
 }
 
-function updateContactStatus(id, status, userId) {
-  const db = getDatabase();
-  db.exec('BEGIN IMMEDIATE');
-  try {
-    const result = db.prepare(`UPDATE denuncias SET contato_status = ?, atualizado_em = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`).run(status, id);
-    if (result.changes) db.prepare('INSERT INTO contato_auditoria (denuncia_id, usuario_id, status) VALUES (?, ?, ?)').run(id, userId, status);
-    db.exec('COMMIT');
-    return result.changes ? findById(id) : undefined;
-  } catch (error) { db.exec('ROLLBACK'); throw error; }
+async function updateContactStatus(id, status, userId) {
+  const db = await getDatabase();
+  const changed = await db.transaction(async (tx) => {
+    const result = await tx.run('UPDATE denuncias SET contato_status = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?', [status, id]);
+    if (result.affectedRows) await tx.run('INSERT INTO contato_auditoria (denuncia_id, usuario_id, status) VALUES (?, ?, ?)', [id, userId, status]);
+    return result.affectedRows;
+  });
+  return changed ? findById(id) : undefined;
 }
 
-function updateStatus(id, status) {
-  const result = getDatabase().prepare(`
+async function updateStatus(id, status) {
+  const result = await (await getDatabase()).run(`
     UPDATE denuncias
-    SET status = ?, atualizado_em = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+    SET status = ?, atualizado_em = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(status, id);
-  return result.changes ? findById(id) : undefined;
+  `, [status, id]);
+  return result.affectedRows ? findById(id) : undefined;
 }
 
 module.exports = { create, findById, findActive, findPending, findAwaitingValidation, updateStatus, updateVerification, updateContactStatus };
