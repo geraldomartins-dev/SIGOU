@@ -8,7 +8,7 @@ const STATUSES = { PENDENTE: 'Pendente', EM_ATENDIMENTO: 'Em atendimento', CONCL
 const VERIFICATIONS = { AGUARDANDO_VALIDACAO: 'Aguardando validação', VALIDADA: 'Validada', REJEITADA: 'Rejeitada' };
 const CONTACT_STATUSES = { NAO_CONTATADO: 'Não contatado', CONTATADO: 'Contatado', SEM_RESPOSTA: 'Sem resposta' };
 const map = L.map('operations-map', { maxBounds: BOUNDS, maxBoundsViscosity: 1, minZoom: 8 }).setView([-23.25, -49.85], 8);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { minZoom: 8, maxZoom: 19, noWrap: true, attribution: '&copy; OpenStreetMap' }).addTo(map);
+addStreetMap(map);
 
 let reports = [], attendant, attendantMarker, accuracyCircle, routeLine;
 let selecting = false, watchId = null, firstGpsFix = true, calculating = false;
@@ -32,12 +32,27 @@ async function api(url, options = {}) {
   return body;
 }
 
+function navigationHtml(report) {
+  const { latitude, longitude } = report;
+  if (latitude == null || longitude == null || String(latitude).trim() === '' || String(longitude).trim() === '') return '';
+  const lat = Number(latitude), lng = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return '';
+  const url = new URL('https://www.google.com/maps/dir/');
+  url.search = new URLSearchParams({ api: '1', destination: `${lat},${lng}`, travelmode: 'driving', dir_action: 'navigate' });
+  // Sem origem fixa: o Maps usa a localização atual do dispositivo para navegar.
+  return `<a class="navigation-action" href="${url.href}" target="_blank" rel="noopener noreferrer" aria-label="Ir com Google Maps (abre em outra guia ou no aplicativo)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 18-8-4-8 4 8-18Z"/><path d="M12 3v14"/></svg><span>Ir com Google Maps</span><svg class="navigation-external" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>`;
+}
+
+function addressHtml(report) {
+  if (!report.endereco) return '';
+  return `<div class="report-address"><svg width="14" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>${escape(report.endereco)}</span></div>`;
+}
 function render() {
   document.querySelector('#report-count').textContent = reports.length;
   document.querySelector('#report-list').innerHTML = reports.length ? reports.map((report) => {
     const waiting = report.verificacao_status === 'AGUARDANDO_VALIDACAO';
     const badge = report.verificacao_status === 'VALIDADA' ? 'validated' : '';
-    return `<article class="report-item" style="--marker-color:${COLORS[report.grau_urgencia]}"><h3>${escape(report.titulo)}</h3><p>${escape(report.descricao)}</p><div class="report-meta"><strong>${LABELS[report.grau_urgencia]}</strong><span>${STATUSES[report.status]}</span></div>${contactHtml(report)}${report.evidencia_url ? `<a class="evidence-link" href="${escape(report.evidencia_url)}" target="_blank">Ver foto ↗</a>` : ''}<div class="verification-row"><span class="verification-badge ${badge}">${VERIFICATIONS[report.verificacao_status]}</span><span class="confidence">Confiança ${report.confianca}%</span></div>${waiting ? `<div class="status-actions verify-actions"><button data-verification="VALIDADA" data-id="${report.id}">Validar</button><button data-verification="REJEITADA" data-id="${report.id}">Rejeitar</button></div>` : ''}<div class="status-actions"><button data-status="EM_ATENDIMENTO" data-id="${report.id}" ${report.verificacao_status !== 'VALIDADA' && report.grau_urgencia !== 4 ? 'disabled' : ''}>Atender</button><button data-status="CONCLUIDA" data-id="${report.id}">Concluir</button></div></article>`;
+    return `<article class="report-item" style="--marker-color:${COLORS[report.grau_urgencia]}"><span class="report-id">Registro ${escape(report.id)}</span> <a class="evidence-link" href="/mensagens.html?registro=${Number(report.id)}">Mensagens</a><h3>${escape(report.titulo)}</h3><p>${escape(report.descricao)}</p>${addressHtml(report)}<div class="report-meta"><strong>${LABELS[report.grau_urgencia]}</strong><span>${STATUSES[report.status]}</span></div>${contactHtml(report)}${report.evidencia_url ? `<a class="evidence-link" href="${escape(report.evidencia_url)}" target="_blank">Ver foto ↗</a>` : ''}<div class="verification-row"><span class="verification-badge ${badge}">${VERIFICATIONS[report.verificacao_status]}</span><span class="confidence">Confiança ${report.confianca}%</span></div>${waiting ? `<div class="status-actions verify-actions"><button data-verification="VALIDADA" data-id="${report.id}">Validar</button><button data-verification="REJEITADA" data-id="${report.id}">Rejeitar</button></div>` : ''}<div class="status-actions"><button data-status="EM_ATENDIMENTO" data-id="${report.id}" ${report.verificacao_status !== 'VALIDADA' && report.grau_urgencia !== 4 ? 'disabled' : ''}>Atender</button><button data-status="CONCLUIDA" data-id="${report.id}">Concluir</button></div>${navigationHtml(report)}</article>`;
   }).join('') : '<p class="muted">Nenhuma ocorrência ativa.</p>';
 }
 
@@ -45,11 +60,14 @@ function contactHtml(report) {
   if (!report.consentimento_contato || (!report.telefone && !report.email && !report.contato)) return '';
   const phone = report.telefone || report.contato || '';
   const phoneDigits = phone.replace(/\D/g, '');
-  const whatsappDigits = phoneDigits.startsWith('55') ? phoneDigits : `55${phoneDigits}`;
+  const withCountryCode = phone.trim().startsWith('+') || /^55[0-9]{10,11}$/.test(phoneDigits);
+  const whatsappDigits = withCountryCode ? phoneDigits : `55${phoneDigits}`;
+  const validWhatsApp = withCountryCode ? /^[1-9][0-9]{7,14}$/.test(phoneDigits) : /^[1-9][0-9]{9,10}$/.test(phoneDigits);
+  const whatsappMessage = `Olá! Aqui é a Central do ResolveJá. Estou entrando em contato sobre a ocorrência nº ${report.id}. Você pode nos atualizar sobre a situação no local?`;
   const actions = [
     phone ? `<a href="tel:${escape(phoneDigits)}">Ligar</a>` : '',
-    phoneDigits.length >= 10 ? `<a href="https://wa.me/${escape(whatsappDigits)}" target="_blank" rel="noopener">WhatsApp</a>` : '',
-    report.email ? `<a href="mailto:${escape(report.email)}?subject=${encodeURIComponent(`SIGOU - ocorrência ${report.id}`)}">E-mail</a>` : ''
+    validWhatsApp ? `<a href="https://wa.me/${whatsappDigits}?text=${encodeURIComponent(whatsappMessage)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : '',
+    report.email ? `<a href="mailto:${escape(report.email)}?subject=${encodeURIComponent(`ResolveJá - ocorrência ${report.id}`)}">E-mail</a>` : ''
   ].filter(Boolean).join('');
   const options = Object.entries(CONTACT_STATUSES).map(([value, label]) => `<option value="${value}" ${report.contato_status === value ? 'selected' : ''}>${label}</option>`).join('');
   return `<div class="contact-panel"><strong>Contato autorizado</strong><span>${escape(phone || report.email)}</span><div class="contact-actions">${actions}</div><select data-contact-status="${report.id}" aria-label="Status do contato">${options}</select></div>`;
@@ -58,7 +76,7 @@ function contactHtml(report) {
 async function load() {
   reports = await api('/api/denuncias');
   markers.forEach((marker) => marker.remove()); markers.clear();
-  reports.forEach((report) => markers.set(report.id, L.marker([report.latitude, report.longitude], { icon: icon(report.grau_urgencia) }).addTo(map).bindPopup(`<strong>${escape(report.titulo)}</strong><br>${escape(report.descricao)}`)));
+  reports.forEach((report) => markers.set(report.id, L.marker([report.latitude, report.longitude], { icon: icon(report.grau_urgencia) }).addTo(map).bindPopup(`<strong>${escape(report.titulo)}</strong><br>${escape(report.descricao)}${addressHtml(report)}${navigationHtml(report)}`)));
   render();
   return reports.map((report) => `${report.id}:${report.status}:${report.verificacao_status}:${report.atualizado_em}`).join('|');
 }
@@ -79,7 +97,7 @@ function updateAttendant(latitude, longitude, accuracy, source) {
   const latlng = { lat: latitude, lng: longitude };
   if (!inside(latlng)) { setLocationStatus('warning', 'Fora da área atendida'); return false; }
   attendant = { latitude, longitude };
-  if (attendantMarker) attendantMarker.setLatLng(latlng); else attendantMarker = L.circleMarker(latlng, { radius: 9, color: '#10243e', weight: 4, fillColor: '#39a9ff', fillOpacity: 1 }).addTo(map).bindTooltip('Equipe em tempo real');
+  if (attendantMarker) attendantMarker.setLatLng(latlng); else attendantMarker = L.circleMarker(latlng, { radius: 9, color: '#0f1e3a', weight: 4, fillColor: '#39a9ff', fillOpacity: 1 }).addTo(map).bindTooltip('Equipe em tempo real');
   if (accuracyCircle) accuracyCircle.remove();
   if (accuracy) accuracyCircle = L.circle(latlng, { radius: accuracy, color: '#39a9ff', weight: 1, fillOpacity: .08, interactive: false }).addTo(map);
   const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -102,20 +120,30 @@ async function calculatePriority(automatic = false) {
       if (marker) marker.setIcon(icon(triage.grau_urgencia, true)).openPopup();
       if (routeLine) { routeLine.remove(); routeLine = null; }
       const card = document.querySelector('#recommendation');
-      card.innerHTML = `<p class="eyebrow">VALIDAR PRIMEIRO</p><h3>${escape(triage.titulo)}</h3><p class="recommendation-copy">Não há serviço validado. Esta é a denúncia mais urgente para triagem.</p><div class="metrics"><span>${LABELS[triage.grau_urgencia]}</span><span>${triage.distancia_km.toFixed(2)} km</span><span>Confiança ${triage.confianca}%</span></div><button class="button primary recommendation-validate" data-recommend-validation="${triage.id}">Validar e recomendar serviço</button>`;
+      card.innerHTML = `<p class="eyebrow">VALIDAR PRIMEIRO</p><h3>${escape(triage.titulo)}</h3>${addressHtml(triage)}<p class="recommendation-copy">Não há serviço validado. Esta é a denúncia mais urgente para triagem.</p><div class="metrics"><span>${LABELS[triage.grau_urgencia]}</span><span>${triage.distancia_km.toFixed(2)} km</span><span>Confiança ${triage.confianca}%</span></div><button class="button primary recommendation-validate" data-recommend-validation="${triage.id}">Validar e recomendar serviço</button>`;
       card.classList.remove('hidden');
       return;
     }
-    if (!result.recomendada) { document.querySelector('#recommendation').classList.add('hidden'); if (!automatic) toast('Não há ocorrências pendentes.'); return; }
+    if (!result.recomendada) {
+      document.querySelector('#recommendation').classList.add('hidden');
+      if (routeLine) { routeLine.remove(); routeLine = null; }
+      markers.forEach((marker, id) => { const report = reports.find((item) => item.id === id); if (report) marker.setIcon(icon(report.grau_urgencia)); });
+      if (!automatic) toast('Não há ocorrências pendentes.');
+      return;
+    }
     reportsSignature = await load();
     const report = result.recomendada, marker = markers.get(report.id);
     if (marker) marker.setIcon(icon(report.grau_urgencia, true)).openPopup();
     if (routeLine) routeLine.remove();
-    routeLine = L.polyline([[attendant.latitude, attendant.longitude], [report.latitude, report.longitude]], { color: '#109d92', weight: 5, dashArray: '9 8' }).addTo(map);
+    const routePoints = result.rota?.geometria?.coordinates?.map(([lng, lat]) => [lat, lng])
+      || [[attendant.latitude, attendant.longitude], [report.latitude, report.longitude]];
+    routeLine = L.polyline(routePoints, { color: '#2e7d52', weight: 5, dashArray: result.rota ? null : '9 8' }).addTo(map);
     if (!automatic) map.fitBounds(routeLine.getBounds(), { padding: [60, 60], maxZoom: 15 });
     const warning = report.verificacao_status !== 'VALIDADA' ? '<span class="unverified-warning">⚠ Crítica não confirmada</span>' : '';
     const card = document.querySelector('#recommendation');
-    card.innerHTML = `<p class="eyebrow">${automatic ? 'RECOMENDAÇÃO AUTOMÁTICA' : 'RECOMENDADA AGORA'}</p><h3>${escape(report.titulo)}</h3><div class="metrics"><span>${LABELS[report.grau_urgencia]}</span><span>${report.distancia_km.toFixed(2)} km</span><span>Score ${report.score.toFixed(2)}</span>${warning}</div>`; card.classList.remove('hidden');
+    const travel = report.tempo_viagem_min ? `<span>${Math.round(report.tempo_viagem_min)} min</span>` : '';
+    const routeMode = result.rota ? '<small class="route-mode">Rota calculada pelas ruas</small>' : '<small class="route-mode">Estimativa em linha reta</small>';
+    card.innerHTML = `<p class="eyebrow">${automatic ? 'RECOMENDAÇÃO AUTOMÁTICA' : 'RECOMENDADA AGORA'}</p><h3>${escape(report.titulo)}</h3>${addressHtml(report)}<div class="metrics"><span>${LABELS[report.grau_urgencia]}</span><span>${report.distancia_km.toFixed(2)} km</span>${travel}<span>Score ${report.score.toFixed(2)}</span>${warning}</div>${routeMode}${navigationHtml(report)}<small class="navigation-note">Navegue a partir da sua localização atual no Maps.</small>`; card.classList.remove('hidden');
   } catch (error) { if (!automatic) toast(error.message); } finally { calculating = false; }
 }
 
@@ -204,3 +232,4 @@ api('/api/auth/me').then(() => load()).then((signature) => {
   requestAnimationFrame(() => map.invalidateSize());
   startLiveLocation();
 }).catch((error) => toast(error.message));
+

@@ -1,0 +1,42 @@
+.conversation-main { max-width: 1180px; height: auto; margin: auto; padding: 28px 24px 48px; }
+.public-conversation { max-width: 750px; }
+.conversation-main h1 { margin: 0 0 12px; font-size: clamp(1.65rem, 4vw, 2.15rem); letter-spacing: -.04em; }
+.conversation-page-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.conversation-layout { display: grid; grid-template-columns: minmax(230px, 320px) minmax(0, 1fr); align-items: start; gap: 18px; }
+.conversation-card, .conversation-list-panel { min-width: 0; padding: clamp(16px, 3vw, 24px); }
+.conversation-list-panel h2, .conversation-thread h3 { font-size: 1.05rem; margin: 0 0 12px; }
+.conversation-heading { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+.conversation-heading h2 { margin: 4px 0; font-size: 1.35rem; overflow-wrap: anywhere; }
+.conversation-number { margin: 0; font-size: .78rem; font-weight: 750; color: var(--muted); }
+.conversation-state { margin: 8px 0 0; color: var(--teal); font-weight: 750; font-size: .88rem; }
+.conversation-thread { margin-top: 18px; }
+.conversation-thread .muted, .conversation-list-panel .muted { font-size: .85rem; }
+.conversation-feedback { color: var(--muted); font-size: .87rem; min-height: 1.2em; margin: 0 0 12px; }
+.conversation-error { color: #9c2929; }
+.conversation-search, .message-form, .tracking-box { display: grid; gap: 8px; }
+.conversation-search > div { display: flex; gap: 6px; }
+.conversation-search .button { font-size: .8rem; }
+.conversation-inbox, .conversation-messages { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 8px; }
+.conversation-inbox a { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--navy); text-decoration: none; border-radius: 8px; overflow-wrap: anywhere; }
+.conversation-inbox a:hover, .conversation-inbox a[aria-current] { background: #fff2cb; border-color: #e7bb4d; }
+.conversation-inbox small { color: var(--muted); font-size: .72rem; line-height: 1.35; }
+.conversation-message { max-width: 88%; justify-self: start; overflow-wrap: anywhere; border-radius: 10px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); font-size: .88rem; }
+.conversation-message.own { justify-self: end; background: #eaf4ee; border-color: #cfe4d7; }
+.conversation-message time { margin-left: 8px; color: var(--muted); font-size: .72rem; }
+.conversation-message p { margin: 7px 0 0; white-space: pre-wrap; line-height: 1.45; }
+.message-form { padding-top: 12px; border-top: 1px solid var(--border); }
+.message-form .primary { justify-self: end; }
+.tracking-box { padding: 12px; margin: 0 0 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; }
+.tracking-box p { margin: 0; color: var(--muted); font-size: .85rem; }
+.tracking-box .button { justify-self: start; }
+.receipt-tracking { display: grid; gap: 8px; }
+.receipt-tracking a.button { display: grid; place-items: center; text-align: center; text-decoration: none; }
+@media (max-width: 720px) {
+  .conversation-main { padding: 20px 12px 32px; }
+  .conversation-layout { grid-template-columns: minmax(0, 1fr); }
+  .conversation-layout .conversation-card { grid-row: 1; }
+  .conversation-message { max-width: 96%; }
+}
+
+.message-suggestions { display: flex; flex-wrap: wrap; gap: 6px; }
+.message-suggestions .button { min-height: 36px; padding: 7px 10px; font-size: .76rem; }

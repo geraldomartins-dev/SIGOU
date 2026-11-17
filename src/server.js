@@ -5,10 +5,10 @@ const { PORT } = require('./config');
 let server;
 async function start() {
   await getDatabase();
-  server = createApp().listen(PORT, () => console.log(`SIGOU disponível em http://localhost:${PORT}`));
+  server = createApp().listen(PORT, () => console.log(`ResolveJá disponível em http://localhost:${PORT}`));
 }
 start().catch((error) => {
-  console.error('Não foi possível iniciar o SIGOU:', error.message);
+  console.error('Não foi possível iniciar o ResolveJá:', error.message);
   process.exit(1);
 });
 

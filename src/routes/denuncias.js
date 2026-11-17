@@ -4,7 +4,9 @@ const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const multer = require('multer');
 const repository = require('../repositories/denunciaRepository');
-const { prioritizeReports } = require('../services/priorityService');
+const { prioritizeReports, prioritizeWithTravel } = require('../services/priorityService');
+const { identifyLocation } = require('../services/locationService');
+const { roadMatrix, roadRoute } = require('../services/routingService');
 const { isInsideServiceArea } = require('../utils/serviceArea');
 const { requireAuth } = require('../middleware/auth');
 const { DATA_DIR } = require('../config');
@@ -44,10 +46,12 @@ router.post('/', upload.single('foto'), async (req, res) => {
   const latitude = Number(req.body.latitude);
   const longitude = Number(req.body.longitude);
   const contato = req.body.contato;
+  const endereco = typeof req.body.endereco === 'string' ? req.body.endereco.trim() : '';
   const telefone = typeof req.body.telefone === 'string' ? req.body.telefone.trim() : '';
   const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const consentimento_contato = req.body.consentimento_contato === 'true' || req.body.consentimento_contato === true;
   const errors = [];
+  if (req.body.endereco != null && (typeof req.body.endereco !== 'string' || endereco.length > 300)) errors.push('Endereço deve ter até 300 caracteres.');
   if (typeof titulo !== 'string' || titulo.trim().length < 3 || titulo.trim().length > 120) errors.push('Título deve ter entre 3 e 120 caracteres.');
   if (typeof descricao !== 'string' || descricao.trim().length < 3 || descricao.trim().length > 1000) errors.push('Descrição deve ter entre 3 e 1000 caracteres.');
   if (!Number.isInteger(grau_urgencia) || grau_urgencia < 1 || grau_urgencia > 4) errors.push('Grau de urgência deve ser um inteiro entre 1 e 4.');
@@ -65,17 +69,26 @@ router.post('/', upload.single('foto'), async (req, res) => {
   if (!validImageSignature(req.file)) errors.push('O conteúdo do arquivo não corresponde a uma imagem válida.');
   if (errors.length) return res.status(400).json({ erro: 'Dados inválidos.', detalhes: errors });
 
-  let evidencia_url;
+  let evidencia_url, uploadPath;
   if (req.file) {
     const extension = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[req.file.mimetype];
     const uploadDirectory = path.join(DATA_DIR, 'uploads');
     fs.mkdirSync(uploadDirectory, { recursive: true });
     const filename = `${randomUUID()}${extension}`;
-    fs.writeFileSync(path.join(uploadDirectory, filename), req.file.buffer);
+    uploadPath = path.join(uploadDirectory, filename);
+    fs.writeFileSync(uploadPath, req.file.buffer);
     evidencia_url = `/uploads/${filename}`;
   }
-  const data = { titulo, descricao, grau_urgencia, latitude, longitude, contato: contato?.trim(), telefone, email, consentimento_contato, evidencia_url };
-  return res.status(201).json(await repository.create({ ...data, confianca: calculateInitialConfidence(data) }));
+  let report;
+  try {
+    const location = await identifyLocation(latitude, longitude);
+    const data = { titulo, descricao, grau_urgencia, latitude, longitude, endereco, ...location, contato: contato?.trim(), telefone, email, consentimento_contato, evidencia_url };
+    report = await repository.create({ ...data, confianca: calculateInitialConfidence(data) });
+  } catch (error) {
+    if (uploadPath) await fs.promises.unlink(uploadPath).catch((cleanupError) => console.error(cleanupError));
+    throw error;
+  }
+  return res.set('Cache-Control', 'no-store').status(201).json(report);
 });
 
 // Todo o restante é exclusivo de operadores autenticados.
@@ -95,14 +108,18 @@ router.post('/proxima', async (req, res) => {
   }
 
   const eligible = (await repository.findPending()).filter((report) => isInsideServiceArea(Number(report.latitude), Number(report.longitude)));
-  const classificacao = prioritizeReports(eligible, { latitude, longitude });
+  const origin = { latitude, longitude };
+  const eligibleTravel = await roadMatrix(origin, eligible);
+  const classificacao = eligibleTravel ? prioritizeWithTravel(eligible, origin, eligibleTravel) : prioritizeReports(eligible, origin);
   const awaiting = (await repository.findAwaitingValidation()).filter((report) => isInsideServiceArea(Number(report.latitude), Number(report.longitude)));
-  const classificacaoTriagem = prioritizeReports(awaiting, { latitude, longitude });
+  const awaitingTravel = await roadMatrix(origin, awaiting);
+  const classificacaoTriagem = awaitingTravel ? prioritizeWithTravel(awaiting, origin, awaitingTravel) : prioritizeReports(awaiting, origin);
+  const rota = classificacao[0] ? await roadRoute(origin, classificacao[0]) : null;
   return res.json({
     recomendada: classificacao[0] || null,
     triagem_recomendada: classificacaoTriagem[0] || null,
     total_pendentes: classificacao.length,
-    classificacao,
+    classificacao, rota,
     classificacao_triagem: classificacaoTriagem
   });
 });
@@ -114,6 +131,9 @@ router.patch('/:id/status', async (req, res) => {
   if (!VALID_STATUSES.includes(status)) return res.status(400).json({ erro: `Status deve ser: ${VALID_STATUSES.join(', ')}.` });
   const current = await repository.findById(id);
   if (!current) return res.status(404).json({ erro: 'Denúncia não encontrada.' });
+  if (current.verificacao_status === 'REJEITADA') {
+    return res.status(409).json({ erro: 'Uma denúncia rejeitada não pode ser atendida ou concluída.' });
+  }
   if (status === 'EM_ATENDIMENTO' && current.verificacao_status !== 'VALIDADA' && current.grau_urgencia !== 4) {
     return res.status(409).json({ erro: 'Valide a denúncia antes de iniciar o atendimento.' });
   }

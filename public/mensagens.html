@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR" class="dashboard-page">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0f1e3a">
+  <meta name="referrer" content="no-referrer">
+  <title>ResolveJá | Mensagens</title>
+  <link rel="icon" href="/resolveja-pin.png">
+  <link rel="stylesheet" href="/style.css?v=registro-1">
+  <link rel="stylesheet" href="/conversas.css?v=2">
+</head>
+<body class="dashboard-body" data-conversa="central">
+  <header class="topbar">
+    <a class="brand" href="/central.html"><img class="brand-mark" src="/resolveja-pin.png" width="43" height="43" alt=""><span><strong class="brand-name">Resolve<span>Já</span></strong><small>Central de Atendimento</small></span></a>
+    <nav class="admin-nav" aria-label="Administração"><a href="/central.html">Central</a><a href="/admin.html">Indicadores</a><a class="active" aria-current="page" href="/mensagens.html">Mensagens</a></nav>
+    <button id="logout" class="logout" type="button">Sair</button>
+  </header>
+  <main class="conversation-main">
+    <div class="conversation-page-heading">
+      <h1>Mensagens</h1>
+      <button id="refresh-conversation" class="button secondary" type="button">Atualizar</button>
+    </div>
+    <p id="conversation-feedback" class="conversation-feedback" role="status"></p>
+    <div class="conversation-layout">
+      <aside class="card conversation-list-panel" aria-labelledby="inbox-title">
+        <h2 id="inbox-title">Conversas recentes</h2>
+        <form action="/mensagens.html" class="conversation-search">
+          <label for="registration">Buscar pelo número de registro</label>
+          <div><input id="registration" name="registro" inputmode="numeric" pattern="[1-9][0-9]*" required><button type="submit" class="button secondary">Buscar</button></div>
+        </form>
+        <p id="inbox-empty" class="muted hidden">Ainda não há ocorrências com acompanhamento.</p>
+        <ul id="inbox" class="conversation-inbox"></ul>
+      </aside>
+      <section id="conversation" class="card conversation-card hidden" aria-labelledby="conversation-title">
+        <header class="conversation-heading">
+          <div>
+            <p id="conversation-number" class="conversation-number"></p>
+            <h2 id="conversation-title"></h2>
+            <p id="conversation-state" class="conversation-state"></p>
+          </div>
+        </header>
+        <div class="conversation-thread">
+          <div id="enable-tracking" class="tracking-box hidden">
+            <p>Gere um link privado para compartilhar o andamento deste registro com a pessoa que o enviou.</p>
+            <button id="generate-tracking" class="button primary" type="button">Gerar link de acompanhamento</button>
+          </div>
+          <div id="issued-tracking" class="tracking-box hidden">
+            <label for="issued-tracking-link">Link privado da ocorrência</label>
+            <input id="issued-tracking-link" readonly>
+            <button id="copy-tracking" class="button secondary" type="button">Copiar link privado</button>
+            <p>Compartilhe o link com a pessoa que registrou o chamado.</p>
+          </div>
+          <h3>Mensagens com o cidadão</h3>
+          <p id="no-messages" class="muted">Ainda não há mensagens para este registro.</p>
+          <ol id="conversation-messages" class="conversation-messages" aria-label="Mensagens da ocorrência"></ol>
+          <form id="message-form" class="message-form">
+            <label for="message-text">Sua resposta</label>
+            <div id="message-suggestions" class="message-suggestions" role="group" aria-label="Mensagens prontas">
+              <button type="button" class="button secondary" data-draft="Olá! A Central recebeu o seu relato. Vamos verificar a ocorrência.">Confirmar recebimento</button>
+              <button type="button" class="button secondary" data-draft="Você pode enviar um ponto de referência ou algum detalhe que ajude a localizar o problema?">Pedir mais detalhes</button>
+              <button type="button" class="button secondary" data-draft="O problema ainda está acontecendo no local?">O problema continua?</button>
+              <button type="button" class="button secondary" data-draft="Quando você percebeu o problema? Se souber, informe o dia e o horário aproximados.">Quando começou?</button>
+              <button type="button" class="button secondary" data-draft="O problema bloqueia a passagem de pedestres ou veículos?">Há bloqueio na via?</button>
+            </div>
+            <textarea id="message-text" rows="3" maxlength="1000" required></textarea>
+            <button type="submit" class="button primary">Enviar mensagem</button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="/conversas.js?v=2"></script>
+</body>
+</html>

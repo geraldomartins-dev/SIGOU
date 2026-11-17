@@ -1,14 +1,20 @@
 const { getDatabase } = require('../db');
+const { createKey } = require('./acompanhamentoRepository');
 
 async function create(data) {
   const db = await getDatabase();
-  const result = await db.run(`
-    INSERT INTO denuncias (titulo, descricao, grau_urgencia, latitude, longitude, contato, telefone, email, consentimento_contato, evidencia_url, confianca)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, [data.titulo.trim(), data.descricao.trim(), data.grau_urgencia, data.latitude, data.longitude,
-    data.contato || null, data.telefone || null, data.email || null, data.consentimento_contato ? 1 : 0,
-    data.evidencia_url || null, data.confianca]);
-  return findById(Number(result.insertId));
+  return db.transaction(async (tx) => {
+    const result = await tx.run(`
+      INSERT INTO denuncias (titulo, descricao, grau_urgencia, latitude, longitude, cidade, regiao, contato, telefone, email, consentimento_contato, evidencia_url, confianca, endereco)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [data.titulo.trim(), data.descricao.trim(), data.grau_urgencia, data.latitude, data.longitude,
+      data.cidade || null, data.regiao || null,
+      data.contato || null, data.telefone || null, data.email || null, data.consentimento_contato ? 1 : 0,
+      data.evidencia_url || null, data.confianca, data.endereco || null]);
+    const report = await tx.get('SELECT * FROM denuncias WHERE id = ?', [result.insertId]);
+    const key = await createKey(tx, report.id);
+    return { ...report, chave_acompanhamento: key };
+  });
 }
 
 async function findById(id) {
@@ -67,10 +73,27 @@ async function updateContactStatus(id, status, userId) {
 async function updateStatus(id, status) {
   const result = await (await getDatabase()).run(`
     UPDATE denuncias
-    SET status = ?, atualizado_em = CURRENT_TIMESTAMP
+    SET status = ?,
+      atendimento_iniciado_em = CASE WHEN ? = 'EM_ATENDIMENTO' AND atendimento_iniciado_em IS NULL THEN CURRENT_TIMESTAMP ELSE atendimento_iniciado_em END,
+      concluido_em = CASE WHEN ? = 'CONCLUIDA' THEN CURRENT_TIMESTAMP ELSE concluido_em END,
+      atualizado_em = CURRENT_TIMESTAMP
     WHERE id = ?
-  `, [status, id]);
+  `, [status, status, status, id]);
   return result.affectedRows ? findById(id) : undefined;
 }
 
-module.exports = { create, findById, findActive, findPending, findAwaitingValidation, updateStatus, updateVerification, updateContactStatus };
+async function findDashboardReports() {
+  const db = await getDatabase();
+  // MySQL grava CURRENT_TIMESTAMP no horário da sessão; o driver entrega Date em UTC.
+  // Normaliza a leitura para o mesmo instante usado pelo SQLite e pelos filtros do painel.
+  const dateColumns = ['criado_em', 'atendimento_iniciado_em', 'concluido_em'].map((column) => db.type === 'mysql'
+    ? `TIMESTAMPADD(SECOND, TIMESTAMPDIFF(SECOND, CURRENT_TIMESTAMP(), UTC_TIMESTAMP()), ${column}) AS ${column}`
+    : column).join(', ');
+  return db.all(`
+    SELECT id, titulo, grau_urgencia, status, verificacao_status, cidade, regiao,
+      latitude, longitude, ${dateColumns}
+    FROM denuncias WHERE verificacao_status != 'REJEITADA' ORDER BY criado_em DESC
+  `);
+}
+
+module.exports = { create, findById, findActive, findPending, findAwaitingValidation, findDashboardReports, updateStatus, updateVerification, updateContactStatus };

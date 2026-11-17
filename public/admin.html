@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR" class="dashboard-page">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f1e3a"><link rel="icon" type="image/png" href="/resolveja-pin.png"><title>ResolveJá | Indicadores</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="/style.css?v=resolveja-1"><link rel="stylesheet" href="/indicators.css?v=3"></head>
+<body class="dashboard-body">
+<header class="topbar"><a class="brand" href="/central.html"><img class="brand-mark" src="/resolveja-pin.png" width="43" height="43" alt=""><span><strong class="brand-name">Resolve<span>Já</span></strong><small>Administração</small></span></a><nav class="admin-nav" aria-label="Administração"><a href="/central.html">Central</a><a class="active" aria-current="page" href="/admin.html">Indicadores</a><a href="/mensagens.html">Mensagens</a></nav><button id="logout" class="logout" type="button">Sair</button></header>
+<main class="dashboard-main">
+  <section class="dashboard-heading"><div><p class="eyebrow">GESTÃO DE OCORRÊNCIAS</p><h1>O atendimento em números</h1><p class="muted">Entradas, entregas e o que ainda precisa de atenção.</p></div><div class="period-controls"><label for="period">Analisar período</label><div><select id="period"><option value="1">Hoje</option><option value="7" selected>Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Último ano</option></select><button id="refresh" type="button" aria-label="Atualizar indicadores" title="Atualizar indicadores">↻</button></div></div></section>
+  <div class="period-line"><span id="period-caption">Carregando período…</span><span id="updated" role="status" aria-live="polite">Buscando dados</span></div>
+  <div id="load-error" class="load-error hidden" role="alert"></div>
+  <div id="dashboard-content" aria-busy="true">
+    <section id="summary" class="summary-grid" aria-label="Resumo dos indicadores"></section>
+    <p class="reading-note">Abertas e concluídas seguem o período acima. Pendentes e em atendimento mostram a fila de agora, inclusive chamados antigos.</p>
+    <section class="dashboard-grid">
+      <article class="dashboard-card"><div class="card-heading"><h2>Entradas e conclusões</h2><span class="section-tag">No período</span></div><p class="card-description">Cada chamado conta no dia em que foi aberto ou concluído.</p><div class="chart-legend"><span><i class="opened-key"></i>Abertas</span><span><i class="completed-key"></i>Concluídas</span></div><div id="activity-chart"></div></article>
+      <article class="dashboard-card queue-card"><div class="card-heading"><h2>Fila de atendimento</h2><span class="section-tag live-tag">Agora</span></div><div id="queue-overview"></div><div id="status-chart" class="status-chart"></div><p id="queue-note" class="card-description"></p><a href="/central.html" class="text-link">Acompanhar na central <span aria-hidden="true">→</span></a></article>
+      <article class="dashboard-card wide"><div class="card-heading"><h2>Últimas conclusões</h2><span class="section-tag">No período</span></div><p class="card-description">Inclui chamados abertos antes do período selecionado.</p><div id="recent-completions"></div><p id="legacy-note" class="data-note hidden"></p></article>
+      <article class="dashboard-card"><div class="card-heading"><h2>Urgência dos novos chamados</h2><span class="section-tag">Abertas no período</span></div><div id="urgency-chart" class="bar-chart"></div></article>
+      <article class="dashboard-card"><div class="card-heading"><h2>Cidades com mais registros</h2><span class="section-tag">Abertas no período</span></div><div id="city-ranking" class="ranking"></div></article>
+      <article class="dashboard-card wide"><div class="card-heading"><h2>Onde estão os novos chamados</h2><span class="section-tag">Abertas no período</span></div><p class="card-description">Localização média por cidade. Círculos maiores representam mais registros.</p><p id="map-empty" class="empty-state hidden"></p><div id="admin-map" class="admin-map"></div></article>
+      <article class="dashboard-card wide"><div class="card-heading"><h2>Registros por região</h2><span class="section-tag">Abertas no período</span></div><div id="region-ranking" class="ranking"></div></article>
+    </section>
+  </div>
+</main>
+<div id="toast" class="toast hidden" role="status"></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="/admin.js?v=3"></script></body></html>

@@ -10,6 +10,10 @@ module.exports = {
   DB_CLIENT: (process.env.DB_CLIENT || 'sqlite').toLowerCase(),
   DB_PATH,
   DATA_DIR: process.env.DATA_DIR || path.dirname(DB_PATH),
+  ROUTING_ENABLED: process.env.ROUTING_ENABLED === 'true',
+  OSRM_URL: process.env.OSRM_URL || 'https://router.project-osrm.org',
+  NOMINATIM_URL: process.env.NOMINATIM_URL || 'https://nominatim.openstreetmap.org',
+  GEOCODING_URL: process.env.GEOCODING_URL || 'https://photon.komoot.io',
   MYSQL: {
     host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT) || 3306,

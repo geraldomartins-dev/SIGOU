@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS denuncias (
   grau_urgencia INTEGER NOT NULL CHECK (grau_urgencia BETWEEN 1 AND 4),
   latitude REAL NOT NULL CHECK (latitude BETWEEN -90 AND 90),
   longitude REAL NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+  endereco TEXT,
+  cidade TEXT,
+  regiao TEXT,
   contato TEXT,
   telefone TEXT,
   email TEXT,
@@ -19,6 +22,8 @@ CREATE TABLE IF NOT EXISTS denuncias (
   verificado_em TEXT,
   status TEXT NOT NULL DEFAULT 'PENDENTE'
     CHECK (status IN ('PENDENTE', 'EM_ATENDIMENTO', 'CONCLUIDA')),
+  atendimento_iniciado_em TEXT,
+  concluido_em TEXT,
   criado_em TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   atualizado_em TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
@@ -58,3 +63,18 @@ CREATE TABLE IF NOT EXISTS sessoes (
   expira_em TEXT NOT NULL,
   criado_em TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
+
+
+CREATE TABLE IF NOT EXISTS acessos_acompanhamento (
+  denuncia_id INTEGER PRIMARY KEY REFERENCES denuncias(id) ON DELETE CASCADE,
+  chave_hash TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS mensagens_denuncia (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  denuncia_id INTEGER NOT NULL REFERENCES acessos_acompanhamento(denuncia_id) ON DELETE CASCADE,
+  autor TEXT NOT NULL CHECK (autor IN ('CIDADAO', 'CENTRAL')),
+  texto TEXT NOT NULL CHECK (length(trim(texto)) BETWEEN 1 AND 1000),
+  enviada_ms INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mensagens_denuncia ON mensagens_denuncia(denuncia_id, id);

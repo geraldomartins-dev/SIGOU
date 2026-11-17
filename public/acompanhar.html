@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR" class="dashboard-page">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0f1e3a">
+  <meta name="referrer" content="no-referrer">
+  <title>ResolveJá | Acompanhar ocorrência</title>
+  <link rel="icon" href="/resolveja-pin.png">
+  <link rel="stylesheet" href="/style.css?v=registro-1">
+  <link rel="stylesheet" href="/conversas.css?v=2">
+</head>
+<body class="dashboard-body" data-conversa="cidadao">
+  <header class="topbar public-header">
+    <a class="brand" href="/"><img class="brand-mark" src="/resolveja-pin.png" width="43" height="43" alt=""><span><strong class="brand-name">Resolve<span>Já</span></strong><small>Ocorrências Urbanas</small></span></a>
+    <a class="central-link" href="/">Voltar ao portal</a>
+  </header>
+  <main class="conversation-main public-conversation">
+    <h1>Acompanhar ocorrência</h1>
+    <p id="conversation-feedback" class="conversation-feedback" role="status"></p>
+    <section id="conversation" class="card conversation-card hidden" aria-labelledby="conversation-title">
+      <header class="conversation-heading">
+        <div>
+          <p id="conversation-number" class="conversation-number"></p>
+          <h2 id="conversation-title"></h2>
+          <p id="conversation-state" class="conversation-state"></p>
+        </div>
+        <button id="refresh-conversation" class="button secondary" type="button">Atualizar</button>
+      </header>
+      <div class="conversation-thread">
+        <h3>Mensagens com a Central</h3>
+        <p id="no-messages" class="muted">Você pode enviar uma pergunta ou complementar o relato por aqui.</p>
+        <ol id="conversation-messages" class="conversation-messages" aria-label="Mensagens da ocorrência"></ol>
+        <form id="message-form" class="message-form">
+          <label for="message-text">Sua mensagem</label>
+          <div id="message-suggestions" class="message-suggestions" role="group" aria-label="Mensagens prontas">
+            <button type="button" class="button secondary" data-draft="Olá! Gostaria de saber se há uma atualização sobre esta ocorrência.">Pedir atualização</button>
+          </div>
+          <textarea id="message-text" rows="3" maxlength="1000" required></textarea>
+          <button type="submit" class="button primary">Enviar mensagem</button>
+        </form>
+      </div>
+    </section>
+  </main>
+  <script src="/conversas.js?v=2"></script>
+</body>
+</html>

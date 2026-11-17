@@ -25,6 +25,7 @@ function sqliteAdapter() {
   // Mantém bancos SQLite criados por versões beta anteriores compatíveis.
   const columns = new Set(connection.prepare('PRAGMA table_info(denuncias)').all().map((column) => column.name));
   const migrations = [
+    ['endereco', 'ALTER TABLE denuncias ADD COLUMN endereco TEXT'],
     ['contato', 'ALTER TABLE denuncias ADD COLUMN contato TEXT'],
     ['telefone', 'ALTER TABLE denuncias ADD COLUMN telefone TEXT'],
     ['email', 'ALTER TABLE denuncias ADD COLUMN email TEXT'],
@@ -35,6 +36,10 @@ function sqliteAdapter() {
     ['confianca', 'ALTER TABLE denuncias ADD COLUMN confianca INTEGER NOT NULL DEFAULT 20'],
     ['motivo_rejeicao', 'ALTER TABLE denuncias ADD COLUMN motivo_rejeicao TEXT'],
     ['verificado_em', 'ALTER TABLE denuncias ADD COLUMN verificado_em TEXT']
+    ,['cidade', 'ALTER TABLE denuncias ADD COLUMN cidade TEXT']
+    ,['regiao', 'ALTER TABLE denuncias ADD COLUMN regiao TEXT']
+    ,['atendimento_iniciado_em', 'ALTER TABLE denuncias ADD COLUMN atendimento_iniciado_em TEXT']
+    ,['concluido_em', 'ALTER TABLE denuncias ADD COLUMN concluido_em TEXT']
   ];
   migrations.forEach(([column, sql]) => { if (!columns.has(column)) connection.exec(sql); });
   connection.exec('CREATE INDEX IF NOT EXISTS idx_denuncias_verificacao ON denuncias(verificacao_status)');
@@ -62,6 +67,16 @@ async function mysqlAdapter() {
     charset: 'utf8mb4', timezone: 'Z', multipleStatements: true
   });
   await pool.query(fs.readFileSync(path.join(ROOT_DIR, 'database', 'schema.mysql.sql'), 'utf8'));
+  const [mysqlColumns] = await pool.query('SHOW COLUMNS FROM denuncias');
+  const mysqlColumnNames = new Set(mysqlColumns.map((column) => column.Field));
+  const mysqlMigrations = [
+    ['endereco', 'ALTER TABLE denuncias ADD COLUMN endereco VARCHAR(300) NULL AFTER longitude'],
+    ['cidade', 'ALTER TABLE denuncias ADD COLUMN cidade VARCHAR(120) NULL AFTER longitude'],
+    ['regiao', 'ALTER TABLE denuncias ADD COLUMN regiao VARCHAR(160) NULL AFTER cidade'],
+    ['atendimento_iniciado_em', 'ALTER TABLE denuncias ADD COLUMN atendimento_iniciado_em DATETIME(3) NULL AFTER status'],
+    ['concluido_em', 'ALTER TABLE denuncias ADD COLUMN concluido_em DATETIME(3) NULL AFTER atendimento_iniciado_em']
+  ];
+  for (const [column, sql] of mysqlMigrations) if (!mysqlColumnNames.has(column)) await pool.query(sql);
   const adapter = {
     type: 'mysql',
     async get(sql, params = []) { const [rows] = await pool.execute(sql, params); return rows[0]; },

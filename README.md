@@ -1,164 +1,181 @@
-# SIGOU — versão beta
+# ResolveJá — comece por aqui
 
-O SIGOU recebe denúncias de problemas urbanos, mostra os locais no mapa e ajuda a equipe a escolher automaticamente o próximo atendimento.
+O ResolveJá registra problemas urbanos, mostra os locais no mapa e organiza os atendimentos. Este guia foi escrito para quem nunca instalou um sistema.
 
-Você não precisa saber programar. Siga as instruções abaixo na ordem.
+- [Relatório do projeto em PDF](docs/Documentacao_ResolveJa.pdf)
+- [Baixar o ZIP de instalação para Windows](https://github.com/geraldomartins-dev/SIGOU/raw/refs/heads/main/entrega/ResolveJa_Para_Enviar.zip)
 
-## O que é necessário
+## 1. O que você precisa ter
 
-- Um computador com Windows 10 ou 11.
-- Internet para carregar o mapa.
-- Celular e computador na mesma rede Wi‑Fi, caso queira acessar pelo celular.
+- Um computador com Windows 10 ou 11 de 64 bits.
+- Internet para a primeira instalação, os mapas e a busca de endereços.
+- A pasta completa do ResolveJá. Mantenha todos os arquivos juntos.
 
-## Instalação fácil no Windows
+**Você não precisa baixar Node.js, XAMPP ou outro banco para uma instalação nova.** O instalador baixa o Node.js automaticamente quando necessário e prepara o banco integrado que guarda as denúncias. O download é feito pelo site oficial e conferido antes de ser usado. Se já existir um Node.js compatível, ele será aproveitado.
 
-### 1. Instale o Node.js
+O Node.js fica na pasta `runtime` do próprio ResolveJá quando é baixado pelo instalador. Por isso ele pode não aparecer na lista de programas instalados do Windows. Isso é normal. Não apague essa pasta.
 
-1. Acesse [nodejs.org/pt/download](https://nodejs.org/pt/download).
-2. Baixe a versão **LTS** para Windows.
-3. Abra o arquivo baixado e clique em **Next** até aparecer **Install**.
-4. Clique em **Install**, depois em **Finish** e reinicie o computador.
+**Neste computador já configurado com MySQL, o ResolveJá mantém o banco existente.** Ele não troca de banco nem apaga suas denúncias. Veja a seção 10 se aparecer erro ao ligar esse banco.
 
-Esse passo só precisa ser feito uma vez.
+## 2. Tire o ResolveJá de dentro do arquivo ZIP
 
-### 2. Instale o SIGOU
+Se você já está usando uma pasta normal do projeto, vá para o passo 3.
 
-1. Abra a pasta `PROJETO SIGOU`.
-2. Clique duas vezes em `1_INSTALAR_SIGOU.bat`.
-3. Aguarde a mensagem **Instalação concluída**.
-4. Pressione qualquer tecla para fechar a janela.
+1. Encontre o arquivo `ResolveJa_Para_Enviar.zip`, normalmente em **Downloads**.
+2. Clique nele com o botão **direito** do mouse.
+3. Clique em **Extrair tudo…**. Se não aparecer, procure em **Mostrar mais opções**.
+4. Escolha uma pasta dentro de **Documentos** e clique em **Extrair**.
+5. Abra a pasta criada e, dentro dela, a pasta `ResolveJa`.
+6. Confirme que você vê os arquivos `1_INSTALAR_SIGOU.bat`, `2_INICIAR_SIGOU.bat`, este README e as pastas `src`, `public`, `database` e `scripts`.
 
-### 3. Inicie o SIGOU
+Não abra o ResolveJá de dentro do ZIP. Não mova só os dois arquivos de abrir e instalar: eles precisam do restante da pasta.
 
-1. Clique duas vezes em `2_INICIAR_SIGOU.bat`.
-2. Aguarde alguns segundos; o portal abrirá no navegador.
-3. Mantenha a janela **Servidor SIGOU** aberta enquanto usar o sistema.
+Se o Windows esconder o final dos nomes, você poderá ver apenas `1_INSTALAR_SIGOU` e `2_INICIAR_SIGOU`. São esses mesmos arquivos. Para mostrar o nome completo: no Explorador de Arquivos, clique em **Exibir** e marque **Extensões de nomes de arquivos**; no Windows 11, essa opção fica dentro de **Mostrar**.
 
-Nas próximas vezes, use somente `2_INICIAR_SIGOU.bat`.
+## 3. Instale — só na primeira vez ou para reparar
 
-## Endereços e login
+1. Conecte o computador à internet.
+2. Clique duas vezes em **1_INSTALAR_SIGOU.bat**.
+3. Uma janela de texto vai aparecer. Deixe-a aberta e aguarde. A primeira vez pode levar vários minutos.
+4. O instalador confere o Node.js, baixa se estiver faltando, instala os componentes e prepara o banco.
+5. Espere aparecer **INSTALACAO CONCLUIDA E CONFERIDA**.
+6. Quando aparecer **Pressione qualquer tecla**, aperte a barra de espaço para fechar.
 
-No computador onde o SIGOU está instalado:
+Não é preciso digitar comandos, escolher versões ou reiniciar o computador para o Node.js instalado por este arquivo. Não feche a janela enquanto estiver baixando.
 
-- Portal: [http://localhost:3000](http://localhost:3000)
-- Central: [http://localhost:3000/login.html](http://localhost:3000/login.html)
+Se aparecer **NAO FOI POSSIVEL CONTINUAR**, a instalação não terminou. Leia a frase seguinte e veja a seção de problemas abaixo. Você pode abrir o instalador novamente para tentar reparar. Ele preserva sua configuração e suas denúncias.
 
-Login inicial:
+Se o Windows ou um antivírus bloquear o arquivo, confira se ele veio da cópia confiável do seu projeto. Não desative a proteção do computador. Em computador de escola ou empresa, pode ser necessário pedir a liberação ao responsável.
 
-```text
-Usuário: operador
-Senha: sigou123
-```
+## 4. Abra — este é o passo para usar todos os dias
 
-> Essa senha é provisória e deve ser substituída antes de usar dados reais.
+1. Abra a pasta completa do ResolveJá.
+2. Clique duas vezes em **2_INICIAR_SIGOU.bat**.
+3. Espere a conferência dos componentes e do banco.
+4. Somente depois de o sistema responder corretamente, aparece **RESOLVEJÁ FUNCIONANDO** e o navegador é aberto.
+5. Mantenha a janela **Servidor ResolveJa** aberta durante todo o uso. Você pode minimizá-la pelo botão **—** no canto superior direito.
 
-## Acessar pelo celular
+Se o ResolveJá desta mesma pasta já estiver funcionando, o arquivo abre a página existente. Se outro programa estiver usando o mesmo endereço, ele avisa em vez de anunciar sucesso.
 
-O celular não precisa instalar o projeto.
+Se o navegador não abrir sozinho, abra Edge, Chrome ou Firefox e digite na barra de endereço, no alto da janela: **http://localhost:3000**. Aperte **Enter**. Não digite na pesquisa do Google. Esse endereço só funciona enquanto o ResolveJá está ligado neste computador. Se sua instalação usar outro número, use o endereço mostrado na janela.
 
-1. Conecte o celular e o computador à mesma rede Wi‑Fi.
-2. No computador, pressione `Windows + R`, digite `cmd` e pressione Enter.
-3. Digite `ipconfig` e pressione Enter.
-4. Procure **Endereço IPv4**, parecido com `192.168.0.15`.
-5. No navegador do celular, digite o endereço seguido de `:3000`.
+## 5. Faça uma denúncia de teste
 
-Exemplo:
+Para conhecer o sistema, use informações inventadas.
 
-```text
-http://192.168.0.15:3000
-```
+1. Na página inicial, escreva um título curto, como **Buraco na rua**.
+2. Na descrição, explique o problema.
+3. Escolha a urgência conforme a gravidade.
+4. Em **Rua, número e cidade**, escreva o endereço completo. Exemplo: **Rua Paraná, 120, Ourinhos - SP**.
+5. Clique em **Localizar no mapa**. Se aparecer uma lista, clique no endereço correspondente e confira o ponto no mapa.
+6. Se não encontrar, clique diretamente no mapa no lugar correto. Use **+** e **−** para aproximar e afastar. Não escolha uma rua parecida em outra cidade.
+7. Se precisar, use **Buscar esse endereço no Google Maps**. Ao voltar ao ResolveJá, marque o ponto no mapa. A alternativa de colar coordenadas é opcional: são dois números que o Google Maps mostra quando você seleciona um ponto; copie os dois juntos para **Cole as coordenadas do local** e clique em **Marcar este ponto no ResolveJá**.
+Se houver ruas com o mesmo nome, aproxime o mapa da região ou informe a cidade na busca. Os trechos da camada local do mapa aparecem entre as sugestões.
 
-Se não abrir, permita o Node.js no Firewall do Windows e confirme que os aparelhos estão no mesmo Wi‑Fi.
+8. Telefone, e-mail e foto são opcionais. Para permitir contato, marque a autorização. Para foto, clique em **Tirar foto ou escolher da galeria** e selecione uma imagem JPG, PNG ou WebP de até 5 MB.
+9. Confira o local e clique em **Enviar denúncia**. Guarde o link privado do comprovante para acompanhar o status e trocar mensagens com a Central.
 
-### GPS no celular
+A busca atende à região prevista pelo projeto: Norte Pioneiro do Paraná e região de Ourinhos. Um ponto fora da área atendida é recusado.
 
-Navegadores permitem GPS somente em páginas seguras (`HTTPS`). Em `localhost`, ele funciona no próprio computador. Para localização em tempo real em outros celulares, o SIGOU precisa ser publicado em um endereço HTTPS.
+## 6. Entre na Central e atenda
 
-## Fazer uma denúncia
+1. Abra **http://localhost:3000/login.html** no navegador ou clique em **Central** no menu.
+2. Em uma instalação nova, use **operador** no usuário e **sigou123** na senha. Clique no botão de entrar.
+3. Em uma instalação já existente, use o acesso que você já utilizava. O instalador não redefine senhas antigas.
+4. Para informar onde está a equipe, clique em **Ativar localização em tempo real**. Se o navegador perguntar, clique em **Permitir**.
+5. Se a localização falhar ou se estiver fazendo uma demonstração, clique em **Definir manualmente no mapa** e depois no ponto onde a equipe está.
+6. Na lista, abra a denúncia que quer verificar. Confira as informações e use **Validar** quando o relato estiver confirmado.
+7. Consulte a recomendação do sistema. A prioridade considera gravidade, proximidade e espera. Ocorrências críticas podem ser recomendadas antes da confirmação; a validação continua necessária.
+8. Clique em **Atender** quando começar o serviço e em **Concluir** somente quando terminar.
+9. Use as opções de contato apenas quando o cidadão tiver autorizado.
 
-1. Preencha título e descrição.
-2. Escolha a urgência.
-3. Se quiser receber contato, informe telefone ou e-mail e marque a autorização.
-4. Tire uma foto ou escolha uma imagem.
-5. Toque no mapa para marcar o local.
-6. Clique em **Enviar denúncia**.
+O acesso inicial também permite abrir **Indicadores**, no menu superior. Escolha o período de 7, 30, 90 ou 365 dias e role a página para ver todos os resultados. O tempo médio conta de **Atender** até **Concluir**. Se ainda não houver serviços concluídos com esses registros, pode aparecer **Sem dados**.
 
-Em risco imediato à vida, ligue diretamente para `190`, `192` ou `193`.
+## 7. Use pelo celular na mesma rede
 
-## Usar a Central
+O celular não instala o projeto. O computador precisa continuar ligado com o ResolveJá aberto.
 
-1. Abra a Central e faça login.
-2. Autorize a localização quando o navegador perguntar.
-3. O sistema indicará automaticamente o próximo serviço.
-4. Se nada estiver validado, mostrará qual denúncia deve ser validada primeiro.
-5. Use **Ligar**, **WhatsApp** ou **E-mail** apenas quando houver autorização.
-6. Atualize o atendimento para **Atender** ou **Concluir**.
+1. Conecte o celular e o computador ao mesmo Wi-Fi.
+2. No computador, segure a tecla com o símbolo do Windows e aperte **R**.
+3. Na caixa que abrir, digite **cmd** e aperte **Enter**.
+4. Na janela preta, digite **ipconfig** e aperte **Enter**.
+5. Procure o bloco **Adaptador de Rede sem Fio Wi-Fi** e a linha **Endereço IPv4**. Copie o número dessa linha, por exemplo `192.168.0.15`. Não use o número de Gateway.
+6. No navegador do celular, digite **http://192.168.0.15:3000**, trocando o número pelo que apareceu no seu computador.
+7. Se não abrir, confirme o Wi-Fi e se a janela Servidor ResolveJa está aberta. Redes de convidados podem impedir a comunicação entre aparelhos.
 
-## Dados e cópia de segurança
+Se o Windows pedir permissão de rede ao abrir o ResolveJá, permita em **redes privadas** na sua rede de confiança. Para rever isso: menu Iniciar → pesquise **Permitir um aplicativo pelo Firewall do Windows** → **Alterar configurações** → encontre Node.js e marque **Privada**. Se ele não estiver na lista, use **Permitir outro aplicativo** e selecione `runtime\node\node.exe` dentro do ResolveJá, ou o Node.js que já estava instalado. O Windows pode pedir a senha do administrador. Não desligue o Firewall.
 
-No modo simples (SQLite), as denúncias ficam em `data\sigou.db`. No modo MySQL, ficam no banco `sigou` administrado pelo phpMyAdmin. As fotos continuam em `data\uploads`.
+No celular, a localização automática pode ser bloqueada pelo navegador nesse endereço local. Use a marcação manual no mapa. Para localização automática fora do próprio computador é necessário um endereço seguro na internet, que começa com **https://**. A instalação local não publica um site na internet.
 
-Para fazer backup:
+## 8. Feche e abra novamente
 
-1. Feche a janela **Servidor SIGOU**.
-2. Copie a pasta `data` inteira para um pendrive ou local seguro.
+1. Termine o que estiver preenchendo e espere a confirmação de envio ou atualização.
+2. Volte à janela **Servidor ResolveJa**.
+3. Pressione **Ctrl+C** para parar. Se perguntar se deseja finalizar, digite **S** e aperte Enter.
+4. Feche a janela e as abas do navegador.
 
-Não compartilhe essa pasta: ela pode conter fotos, telefones e e-mails.
+Para voltar a usar, abra somente **2_INICIAR_SIGOU.bat**. Não precisa instalar tudo outra vez. Depois de reiniciar ou desligar o computador, também é necessário abrir esse arquivo.
 
-## Problemas comuns
+## 9. Guarde uma cópia dos dados
 
-### A janela fecha ao iniciar
+Primeiro pare o ResolveJá conforme a seção anterior. Uma cópia do ZIP original não inclui as denúncias feitas depois da instalação.
 
-O Node.js provavelmente não está instalado. Faça novamente o primeiro passo.
+### Instalação nova com banco integrado
 
-### “Porta 3000 em uso”
+1. Abra a pasta do ResolveJá.
+2. Clique com o botão direito na pasta **data** e escolha **Copiar**.
+3. Abra um pendrive ou uma pasta segura de cópias.
+4. Clique com o botão direito no espaço vazio e escolha **Colar**.
+5. Dê à cópia um nome com a data, como **Copia ResolveJá 28-10-2026**.
 
-O SIGOU já está aberto. Feche a janela antiga **Servidor SIGOU** e tente de novo.
+Essa pasta inclui o banco `sigou.db` e as fotos em `uploads`. Para voltar uma cópia, pare o ResolveJá, guarde a pasta data atual com outro nome e copie a pasta data salva de volta para a pasta do projeto. Voltar uma cópia substitui o conjunto de dados pelo que existia naquela data.
 
-### O mapa não aparece
+### Instalação atual com MySQL e XAMPP
 
-Confira a internet e pressione `Ctrl + F5` na página.
+**Copiar apenas data não guarda as denúncias neste modo. Faça as duas cópias:**
 
-### O GPS não funciona
+1. Com o MySQL ligado no XAMPP, abra **http://localhost/phpmyadmin**. Se não abrir, no **XAMPP Control Panel**, clique em **Start** ao lado de **Apache**; depois tente novamente. O Apache é necessário para essa tela de cópia, não para abrir o ResolveJá.
+2. Na coluna da esquerda, clique no banco **sigou** (ou no nome utilizado na sua instalação).
+3. Clique na aba **Exportar**.
+4. Escolha **Rápido** e o formato **SQL**; clique em **Exportar** ou **Executar**.
+5. Guarde o arquivo `.sql` baixado no seu pendrive ou pasta segura.
+6. Copie também a pasta **data**, como explicado acima, para guardar as fotos.
 
-- Ative a localização do aparelho.
-- Autorize a localização no navegador.
-- Em celular, use uma versão publicada em HTTPS.
-- Use a posição manual como alternativa.
+Se o seu MySQL não usa XAMPP/phpMyAdmin, a cópia do banco deve ser feita pela ferramenta usada para administrá-lo. Não considere a cópia completa até ter tanto o banco exportado quanto as fotos. Para recuperar MySQL, peça auxílio ao responsável pelo banco antes de importar sobre dados existentes.
 
-### O celular não abre o endereço
+Essas cópias podem conter fotos e contatos de pessoas. Guarde em local protegido.
 
-- Confirme que ambos estão no mesmo Wi‑Fi.
-- Confira novamente o Endereço IPv4.
-- Permita o Node.js no Firewall do Windows.
-- Mantenha **Servidor SIGOU** aberto.
+## 10. Se algo der errado
 
-## Parar o sistema
+| O que aparece | O que fazer |
+| --- | --- |
+| Falta Node.js ou faltam componentes | Abra **1_INSTALAR_SIGOU.bat** com internet. Ele baixa ou repara o necessário. |
+| Falha no download | Confira a internet e tente instalar novamente. Não haverá mensagem de instalação concluída enquanto faltar algo. |
+| Endereço ocupado | Pode existir uma janela antiga do ResolveJá ou outro programa usando o endereço. Feche a janela antiga do ResolveJá e tente de novo. Não encerre programas desconhecidos. |
+| MySQL desligado | O ResolveJá tenta ligar o serviço ou o MySQL do XAMPP automaticamente. Se falhar, abra **XAMPP Control Panel** no menu Iniciar e clique em **Start** ao lado de **MySQL**. Espere ficar verde e tente abrir o ResolveJá. Se for serviço instalado do Windows, clique com o botão direito no iniciador e use **Executar como administrador**. |
+| MySQL recusa usuário ou senha | O acesso salvo não corresponde ao banco. O instalador não tenta adivinhar nem substituir senhas. Peça ao responsável que confira o arquivo `.env`. Os dados são preservados. |
+| Banco não preparado | Abra **1_INSTALAR_SIGOU.bat**. Ele prepara o banco e as tabelas quando o acesso existente permite. |
+| Navegador não abre | Procure **RESOLVEJÁ FUNCIONANDO** na janela e digite o endereço que ela mostra. Se houver erro, resolva esse erro primeiro. |
+| Mapa vazio | Confira a internet e pressione **Ctrl+F5** na página. Os mapas são carregados de um serviço externo. |
+| Rua não encontrada | Informe rua e cidade, confira as sugestões ou marque o ponto diretamente no mapa. |
+| Localização bloqueada | Permita a localização no navegador ou use **Definir manualmente no mapa**. |
+| Não consigo entrar com operador | Na instalação existente, use seu acesso anterior. A senha padrão só é criada quando ainda não existe usuário no banco. |
 
-Feche a janela **Servidor SIGOU**. O endereço deixará de funcionar até abrir `2_INICIAR_SIGOU.bat` novamente.
+Se o erro continuar, anote ou fotografe a mensagem completa da janela e guarde para quem for ajudar. Não apague a pasta **data**, não exclua o banco e não troque o tipo de banco para tentar resolver.
 
-## Para desenvolvedores
+## 11. Informações para quem dá manutenção
 
-Requer Node.js 22.5 ou superior.
+Esta parte é opcional; não é necessário fazê-la para instalar ou usar.
 
-```bash
-npm install
-npm start
-npm test
-```
+- Node.js compatível: 22.5 ou superior, com `node:sqlite`. O download automático usa a versão LTS mais recente da família 24 disponível no site oficial, para manter uma família conhecida.
+- `1_INSTALAR_SIGOU.bat` e `2_INICIAR_SIGOU.bat` usam `scripts/windows.ps1` e `scripts/controle.cjs`; distribua esses arquivos juntos.
+- Sem `.env`, cria configuração local com `DB_CLIENT=sqlite`, porta 3000 e o acesso inicial descrito acima. Um `.env` existente nunca é sobrescrito. Não distribua o `.env` da instalação pessoal.
+- No modo MySQL existente, tenta iniciar serviço MySQL/MariaDB ou XAMPP em `C:\xampp`. Não instala um segundo servidor sobre um banco existente. Um MySQL instalado em local personalizado ou remoto continua sob administração de seu responsável.
+- Durante a instalação em MySQL, cria o banco se ainda não existir e se o usuário tiver permissão. A inicialização prepara as tabelas e mantém as migrações do projeto.
+- `DB_PATH` e `DATA_DIR` personalizados mudam onde ficam o banco local e as fotos; adapte a cópia de segurança nesses casos.
+- A verificação em `/api/health` consulta o banco. O iniciador confere a identidade da pasta e do processo antes de abrir o navegador.
+- O modo padrão usa uma estimativa em linha reta no mapa. Rotas pelas ruas exigem `ROUTING_ENABLED=true` no `.env`, conexão com o serviço em `OSRM_URL` e reinício do ResolveJá. As coordenadas são enviadas a esse serviço. Se ele falhar, existe alternativa de cálculo local.
+- A senha inicial é para demonstração. Antes de uso público com dados reais, configure credenciais próprias, acesso seguro, cópias de segurança e proteção dos dados. Alterar `CENTRAL_PASSWORD` só define a senha quando o usuário inicial ainda não existe; não redefine contas existentes.
+- Testes do projeto: `npm test`.
 
-Usa Express, MySQL/MariaDB ou SQLite, Leaflet e OpenStreetMap.
-
-### Usar MySQL pelo phpMyAdmin
-
-1. No phpMyAdmin, clique em **Novo**, informe `sigou` e crie o banco com agrupamento `utf8mb4_unicode_ci`.
-2. Copie `.env.example` e renomeie a cópia para `.env`.
-3. Abra `.env` no Bloco de Notas e preencha `DB_USER` e `DB_PASSWORD` com o login do MySQL.
-4. Confirme que `DB_CLIENT=mysql` e `DB_NAME=sigou`.
-5. Execute `npm install` e depois `npm start`.
-
-Na primeira inicialização, o servidor executa `database/schema.mysql.sql`, cria as tabelas e cria o usuário inicial definido por `CENTRAL_USER` e `CENTRAL_PASSWORD`. O arquivo `.env` é ignorado pelo Git para não publicar senhas.
-
-Para voltar ao banco local sem phpMyAdmin, use `DB_CLIENT=sqlite` no `.env`.
-
-Antes de uso público real, configure HTTPS, credenciais próprias, política de privacidade, backups e proteção adequada dos dados pessoais.
+Download oficial utilizado pelo instalador: [Node.js](https://nodejs.org/en/download).
